@@ -6,13 +6,12 @@ use App\Book;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class BookReservationTest extends TestCase
+class BookManagementTest extends TestCase
 {
 
     use RefreshDatabase;
-    /**
-     * @test
-     */
+    
+    /** @test */
     public function a_book_can_be_added_to_the_library()
     {
         $res = $this->post('/books', [
@@ -20,15 +19,15 @@ class BookReservationTest extends TestCase
             'author' => 'Tommy'
         ]);
 
-        $res->assertOk();
+        $book = Book::first();
+        // $res->assertOk();
         
         $this->assertCount(1, Book::all());
+        $res->assertRedirect($book->path());
 
     }
 
-    /**
-     * @test
-     */
+    /** @test */
     public function a_title_is_required()
     {
         // $this->withoutExceptionHandling();
@@ -41,9 +40,7 @@ class BookReservationTest extends TestCase
         $res->assertSessionHasErrors('title');
     }
 
-    /**
-     * @test
-     */
+    /** @test */
     public function a_author_is_required()
     {
         // $this->withoutExceptionHandling();
@@ -56,9 +53,7 @@ class BookReservationTest extends TestCase
         $res->assertSessionHasErrors('author');
     }
 
-    /**
-     * @test
-     */
+    /** @test */
     public function a_book_can_be_updated()
     {
         $this->withoutExceptionHandling();
@@ -70,12 +65,34 @@ class BookReservationTest extends TestCase
 
         $book = Book::first();
 
-        $res = $this->patch('/books/'. $book->id, [
+        $res = $this->patch($book->path(), [
             'title' => 'Chemical things',
             'author' => 'Fernando'
         ]);
  
         $this->assertEquals('Chemical things', Book::first()->title);
         $this->assertEquals('Fernando', Book::first()->author);
+
+        $res->assertRedirect($book->fresh()->path());
+    }
+
+    /** @test */
+    public function a_book_can_be_deleted()
+    {
+        // $this->withoutExceptionHandling();
+
+        $this->post('/books', [
+            'title' => 'Silicon Valley',
+            'author' => 'Tommy'
+        ]);
+
+        $book = Book::first();
+        $this->assertCount(1, Book::all());
+
+        $res = $this->delete($book->path());
+ 
+        $this->assertCount(0, Book::all());
+
+        $res->assertRedirect('/books');
     }
 }
