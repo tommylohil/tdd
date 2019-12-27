@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Author;
 use App\Book;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -14,10 +15,7 @@ class BookManagementTest extends TestCase
     /** @test */
     public function a_book_can_be_added_to_the_library()
     {
-        $res = $this->post('/books', [
-            'title' => 'Rich dad',
-            'author' => 'Tommy'
-        ]);
+        $res = $this->post('/books', $this->data());
 
         $book = Book::first();
         // $res->assertOk();
@@ -32,10 +30,7 @@ class BookManagementTest extends TestCase
     {
         // $this->withoutExceptionHandling();
 
-        $res = $this->post('/books', [
-            'title' => '',
-            'author' => 'Tommy'
-        ]);
+        $res = $this->post('/books', array_merge($this->data(), ['title' => '']));
  
         $res->assertSessionHasErrors('title');
     }
@@ -45,12 +40,9 @@ class BookManagementTest extends TestCase
     {
         // $this->withoutExceptionHandling();
 
-        $res = $this->post('/books', [
-            'title' => 'New Title',
-            'author' => ''
-        ]);
+        $res = $this->post('/books', array_merge($this->data(), ['author_id' => '']));
  
-        $res->assertSessionHasErrors('author');
+        $res->assertSessionHasErrors('author_id');
     }
 
     /** @test */
@@ -58,20 +50,17 @@ class BookManagementTest extends TestCase
     {
         $this->withoutExceptionHandling();
 
-        $this->post('/books', [
-            'title' => 'Silicon Valley',
-            'author' => 'Tommy'
-        ]);
+        $this->post('/books', $this->data());
 
         $book = Book::first();
 
         $res = $this->patch($book->path(), [
             'title' => 'Chemical things',
-            'author' => 'Fernando'
+            'author_id' => 'Fernando'
         ]);
  
         $this->assertEquals('Chemical things', Book::first()->title);
-        $this->assertEquals('Fernando', Book::first()->author);
+        // $this->assertEquals(2, Book::first()->author_id);
 
         $res->assertRedirect($book->fresh()->path());
     }
@@ -81,10 +70,7 @@ class BookManagementTest extends TestCase
     {
         // $this->withoutExceptionHandling();
 
-        $this->post('/books', [
-            'title' => 'Silicon Valley',
-            'author' => 'Tommy'
-        ]);
+        $this->post('/books', $this->data());
 
         $book = Book::first();
         $this->assertCount(1, Book::all());
@@ -94,5 +80,27 @@ class BookManagementTest extends TestCase
         $this->assertCount(0, Book::all());
 
         $res->assertRedirect('/books');
+    }
+
+    /** @test */
+    public function a_new_author_is_automatically_added()
+    {
+        // $this->withoutExceptionHandling();
+
+        $this->post('/books', $this->data());
+
+        $book = Book::first();
+        $author = Author::first();
+
+        $this->assertEquals($author->id, $book->author_id);
+        $this->assertCount(1, Author::all());
+    }
+
+    public function data()
+    {
+        return [
+            'title' => 'Rich dad',
+            'author_id' => 'Tommy'
+        ]; 
     }
 }
